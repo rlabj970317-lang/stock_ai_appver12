@@ -143,7 +143,6 @@
     </div>
 
     <script>
-        // API 키 불러오기 로직
         document.addEventListener('DOMContentLoaded', () => {
             const savedKey = localStorage.getItem('GEMINI_API_KEY');
             if (savedKey) {
@@ -184,14 +183,12 @@
                 return;
             }
 
-            // 분석 진행 상태 UI
             input.disabled = true;
             submitBtn.disabled = true;
             btnText.classList.add('hidden');
             btnSpinner.classList.remove('hidden');
             resultsContainer.classList.add('hidden');
             
-            // 🚀 Reset logo/name for new search
             document.getElementById('res-company-logo').classList.add('hidden');
             document.getElementById('res-company-logo').src = '';
             document.getElementById('res-logo-loading-spinner').classList.remove('hidden');
@@ -199,7 +196,7 @@
             document.getElementById('res-company-name-text').textContent = '기업 개요';
 
             statusContainer.className = "mb-6 p-4 rounded-xl fade-in text-sm font-medium text-center bg-blue-50 text-blue-600";
-            statusContainer.textContent = `🚀 [${ticker}] 최신 데이터를 수집하고 AI 분석 중입니다... (최대 10초 소요)`;
+            statusContainer.textContent = `🚀 [${ticker}] 실시간 데이터를 바탕으로 AI가 심층 분석 중입니다... (최대 10초 소요)`;
             statusContainer.classList.remove('hidden');
             
             try {
@@ -218,179 +215,16 @@
         }
 
         async function fetchWithRetry(ticker, apiKey, maxRetries) {
-            // 사용자 계정에 맞는 gemini-2.5-flash 모델 적용
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
             
-            // 🚀 AI 프롬프트 업데이트 (회사 로고 URL 및 정식 회사명 추가 요청)
-            const prompt = `세계적인 금융 애널리스트로서 주식 '${ticker}'에 대한 최신 데이터를 수집하고 분석해주세요. 
-            
-            검색 결과를 바탕으로 다음 정보를 포함하는 '순수한 JSON 객체' 형식으로만 대답하세요. 마크다운 기호나 부연 설명을 넣으면 시스템이 고장납니다. 뉴스 목록은 4~5개 정도 찾아주세요.
+            // 🚀 프롬프트 변경: 이미지 주소 대신 '웹사이트 도메인'을 찾도록 지시
+            const prompt = `당신은 탁월한 금융 애널리스트입니다. 종목 '${ticker}'에 대해 구글 검색을 활용해 최신 실시간 데이터를 바탕으로 아래 내용을 분석해주세요.
+
+            반드시 아래의 '순수 JSON' 형식으로만 반환하고 다른 텍스트나 마크다운 기호(\`\`\`)는 절대 넣지 마세요.
 
             {
-                "companyName": "공식 회사명", // 🚀 Add companyName for better title
-                "logoUrl": "회사의 공식 로고 URL (http로 시작, 가능하면 SVG 또는 투명 PNG)", // 🚀 Add logoUrl
+                "companyName": "공식 회사명",
+                "domain": "회사의 공식 웹사이트 도메인 (예: apple.com, tesla.com, samsung.com - 반드시 http:// 나 www. 를 제외하고 순수 영문 도메인만 작성할 것)",
                 "description": "회사의 주요 사업과 시장 내 위치 설명",
                 "outlook": "최근 실적 및 거시경제 상황을 종합한 향후 주가 전망",
-                "fiftyTwoWeekHigh": "1년(52주) 최고가 (검색하여 정확한 가격 명시, 예: $150.00 또는 150,000원)",
-                "fiftyTwoWeekLow": "1년(52주) 최저가 (검색하여 정확한 가격 명시, 예: $90.00 또는 90,000원)",
-                "priceLevelAssessment": "현재 주가가 1년 변동폭과 비교할 때 '고점', '저점', '적정 수준' 중 어디에 해당하는지 명확히 밝히고 그 이유를 짧게 설명",
-                "action": "매수, 매도, 관망 중 하나를 선택",
-                "targetPrice": "매수 시 권장 진입가, 매도 시 목표가 등 구체적인 가격대와 그 이유 (숫자 포함하여 상세히)",
-                "news": [
-                    {
-                        "title": "실제 검색된 최신 뉴스 제목",
-                        "summary": "뉴스 핵심 내용 요약",
-                        "url": "해당 뉴스의 실제 웹페이지 링크 주소(http로 시작)",
-                        "publishedAt": "뉴스가 보도된 날짜 또는 시간 (예: 2026.05.23 또는 3시간 전)"
-                    }
-                ]
-            }`;
-
-            for (let attempt = 1; attempt <= maxRetries; attempt++) {
-                try {
-                    if (attempt > 1) {
-                        document.getElementById('status-container').textContent = `⏳ 서버 지연으로 다시 연결 중입니다... (${attempt}/${maxRetries})`;
-                    }
-
-                    const response = await fetch(url, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            contents: [{ parts: [{ text: prompt }] }],
-                            tools: [{ "googleSearch": {} }] 
-                        })
-                    });
-
-                    if (response.status === 403) {
-                        throw new Error("API 키가 유효하지 않거나 구글에 의해 정지되었습니다. Google AI Studio에서 새 키를 발급받아 주세요.");
-                    }
-                    if (response.status === 429) {
-                        if (attempt === maxRetries) throw new Error("사용량이 너무 많습니다. 1분 후 다시 시도해주세요.");
-                        await new Promise(r => setTimeout(r, 5000));
-                        continue;
-                    }
-                    if (response.status === 503) {
-                        if (attempt === maxRetries) throw new Error("구글 AI 서버가 바쁩니다. 잠시 후 다시 시도해주세요.");
-                        await new Promise(r => setTimeout(r, 3000)); 
-                        continue;
-                    }
-
-                    if (!response.ok) {
-                        const errData = await response.json();
-                        throw new Error(`통신 실패 (코드 ${response.status}): ${errData.error?.message || '알 수 없는 오류'}`);
-                    }
-
-                    const json = await response.json();
-                    
-                    if (!json.candidates || json.candidates.length === 0) {
-                        throw new Error("AI가 데이터 수집을 완료하지 못했습니다.");
-                    }
-
-                    let aiText = json.candidates[0].content.parts[0].text;
-                    aiText = aiText.replace(/```json/gi, '').replace(/```/g, '').trim();
-
-                    return JSON.parse(aiText);
-
-                } catch (error) {
-                    if (attempt === maxRetries || error.message.includes("유효하지 않거나")) throw error;
-                    await new Promise(r => setTimeout(r, 2000));
-                }
-            }
-        }
-
-        function renderResults(data) {
-            // 🚀 New: Handle dynamic company name and logo with fallback
-            const companyNameText = document.getElementById('res-company-name-text');
-            const logoImg = document.getElementById('res-company-logo');
-            const logoFallback = document.getElementById('res-logo-fallback');
-            const logoSpinner = document.getElementById('res-logo-loading-spinner');
-
-            // Update dynamic company name, fallback to "기업 개요"
-            companyNameText.textContent = data.companyName || '기업 개요';
-
-            // Try to load the dynamic logo with fallback handling
-            if (data.logoUrl && (data.logoUrl.startsWith('http') || data.logoUrl.startsWith('data:image'))) {
-                // Set logoImg onload/onerror handlers before setting src to avoid race conditions
-                logoImg.onload = () => {
-                    // Image successfully loaded
-                    logoSpinner.classList.add('hidden');
-                    logoFallback.classList.add('hidden');
-                    logoImg.classList.remove('hidden');
-                };
-                logoImg.onerror = () => {
-                    // Image loading failed, show fallback circle
-                    logoSpinner.classList.add('hidden');
-                    logoImg.classList.add('hidden');
-                    logoFallback.classList.remove('hidden');
-                };
-                logoImg.src = data.logoUrl;
-            } else {
-                // No logo URL provided or invalid, show fallback emoji directly
-                logoSpinner.classList.add('hidden');
-                logoImg.classList.add('hidden');
-                logoFallback.classList.remove('hidden');
-            }
-
-            document.getElementById('res-description').textContent = data.description || "정보가 부족합니다.";
-            document.getElementById('res-outlook').innerHTML = (data.outlook || "").replace(/\n/g, '<br>');
-
-            // 1년 고점/저점 및 위치 평가 렌더링
-            document.getElementById('res-52w-high').textContent = data.fiftyTwoWeekHigh || "정보 없음";
-            document.getElementById('res-52w-low').textContent = data.fiftyTwoWeekLow || "정보 없음";
-            
-            // 고점/저점 키워드에 따라 색상 하이라이트 추가
-            let assessmentText = data.priceLevelAssessment || "분석 정보를 가져올 수 없습니다.";
-            assessmentText = assessmentText.replace(/(고점)/g, '<strong class="text-red-500 font-bold">$1</strong>');
-            assessmentText = assessmentText.replace(/(저점)/g, '<strong class="text-blue-500 font-bold">$1</strong>');
-            document.getElementById('res-price-level').innerHTML = assessmentText;
-
-            // 투자 전략 (매수/매도/관망) 배지
-            const actionBadge = document.getElementById('res-action-badge');
-            const actionText = data.action || "분석 불가";
-            actionBadge.textContent = actionText;
-            
-            if (actionText.includes("매수")) {
-                actionBadge.className = "px-3 py-1 rounded-full text-sm font-bold bg-red-100 text-red-600 shadow-sm";
-            } else if (actionText.includes("매도")) {
-                actionBadge.className = "px-3 py-1 rounded-full text-sm font-bold bg-blue-100 text-blue-600 shadow-sm";
-            } else {
-                actionBadge.className = "px-3 py-1 rounded-full text-sm font-bold bg-gray-200 text-gray-700 shadow-sm";
-            }
-
-            document.getElementById('res-target-price').textContent = data.targetPrice || "적정 가격 정보를 산출할 수 없습니다.";
-
-            // 뉴스 리스트 렌더링 (클릭 링크 + 날짜 유지)
-            const newsList = document.getElementById('res-news-list');
-            newsList.innerHTML = '';
-
-            if (data.news && data.news.length > 0) {
-                data.news.forEach(item => {
-                    const a = document.createElement('a');
-                    a.href = item.url && item.url.startsWith('http') ? item.url : '#';
-                    if (a.href !== '#') {
-                        a.target = "_blank"; 
-                        a.rel = "noopener noreferrer";
-                    }
-                    
-                    a.className = "flex flex-col h-full bg-white border border-gray-100 rounded-xl p-4 news-card group cursor-pointer hover:border-blue-100";
-                    a.innerHTML = `
-                        <h3 class="text-base font-bold text-gray-800 mb-2 group-hover:text-blue-600 transition-colors line-clamp-2">${item.title}</h3>
-                        <p class="text-sm text-gray-600 mb-3 line-clamp-3 flex-grow">${item.summary}</p>
-                        <div class="flex items-center text-xs text-gray-400 font-medium mt-auto pt-2 border-t border-gray-100">
-                            <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                            </svg>
-                            ${item.publishedAt || "날짜 미상"}
-                        </div>
-                    `;
-                    newsList.appendChild(a);
-                });
-            } else {
-                newsList.innerHTML = `<p class="text-gray-500 text-center py-4 col-span-2">최신 뉴스가 없습니다.</p>`;
-            }
-
-            document.getElementById('results-container').classList.remove('hidden');
-        }
-    </script>
-</body>
-</html>
+                "fiftyTwoWeekHigh": "1년(
