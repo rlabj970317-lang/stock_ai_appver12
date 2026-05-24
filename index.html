@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 주식 인사이트 플래너 Pro</title>
+    <title>AI 분석 주식 플래너 with 준이준이준준이</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
     <style>
@@ -43,7 +43,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
                 </svg>
             </div>
-            <h1 class="text-3xl md:text-4xl font-bold tracking-tight text-gray-900 mb-2">AI 주식 인사이트 플래너</h1>
+            <h1 class="text-3xl md:text-4xl font-bold tracking-tight text-gray-900 mb-2">AI 분석 주식 플래너 with 준이준이준준이</h1>
             <p class="text-gray-500 text-sm">실시간 검색 및 AI 분석을 통한 스마트한 투자 전략</p>
         </header>
 
@@ -85,11 +85,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="glass-card rounded-2xl p-6 fade-in flex flex-col h-full">
                     <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
-                        <div id="res-company-logo-container" class="flex items-center justify-center p-1 rounded-xl bg-white border border-gray-100 mr-3 w-12 h-12 overflow-hidden shadow-inner">
-                            <img id="res-company-logo" src="" alt="Company Logo" class="hidden w-full h-full object-contain p-0.5">
-                            <span id="res-logo-fallback" class="hidden text-3xl text-indigo-600">🏢</span>
-                            <div id="res-logo-loading-spinner" class="spinner border-gray-200 border-left-blue-500 w-5 h-5"></div>
-                        </div>
+                        <span class="p-2 bg-indigo-100 text-indigo-600 rounded-lg mr-3">🏢</span>
                         <span id="res-company-name-text">기업 개요</span>
                     </h2>
                     <p id="res-description" class="text-gray-600 leading-relaxed text-sm flex-grow"></p>
@@ -189,10 +185,6 @@
             btnSpinner.classList.remove('hidden');
             resultsContainer.classList.add('hidden');
             
-            document.getElementById('res-company-logo').classList.add('hidden');
-            document.getElementById('res-company-logo').src = '';
-            document.getElementById('res-logo-loading-spinner').classList.remove('hidden');
-            document.getElementById('res-logo-fallback').classList.add('hidden');
             document.getElementById('res-company-name-text').textContent = '기업 개요';
 
             statusContainer.className = "mb-6 p-4 rounded-xl fade-in text-sm font-medium text-center bg-blue-50 text-blue-600";
@@ -217,14 +209,102 @@
         async function fetchWithRetry(ticker, apiKey, maxRetries) {
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
             
-            // 🚀 프롬프트 변경: 이미지 주소 대신 '웹사이트 도메인'을 찾도록 지시
             const prompt = `당신은 탁월한 금융 애널리스트입니다. 종목 '${ticker}'에 대해 구글 검색을 활용해 최신 실시간 데이터를 바탕으로 아래 내용을 분석해주세요.
 
             반드시 아래의 '순수 JSON' 형식으로만 반환하고 다른 텍스트나 마크다운 기호(\`\`\`)는 절대 넣지 마세요.
 
             {
                 "companyName": "공식 회사명",
-                "domain": "회사의 공식 웹사이트 도메인 (예: apple.com, tesla.com, samsung.com - 반드시 http:// 나 www. 를 제외하고 순수 영문 도메인만 작성할 것)",
                 "description": "회사의 주요 사업과 시장 내 위치 설명",
                 "outlook": "최근 실적 및 거시경제 상황을 종합한 향후 주가 전망",
-                "fiftyTwoWeekHigh": "1년(
+                "fiftyTwoWeekHigh": "1년(52주) 최고가 (검색하여 정확한 가격 명시, 예: $150.00 또는 150,000원)",
+                "fiftyTwoWeekLow": "1년(52주) 최저가 (검색하여 정확한 가격 명시, 예: $90.00 또는 90,000원)",
+                "priceLevelAssessment": "현재 주가가 1년 변동폭과 비교할 때 '고점', '저점', '적정 수준' 중 어디에 해당하는지 명확히 밝히고 그 이유를 짧게 설명",
+                "action": "매수, 매도, 관망 중 하나를 선택",
+                "targetPrice": "매수 시 권장 진입가, 매도 시 목표가 등 구체적인 가격대와 그 이유 (숫자 포함하여 상세히)",
+                "news": [
+                    {
+                        "title": "실제 검색된 최신 뉴스 제목",
+                        "summary": "뉴스 핵심 내용 1줄 요약",
+                        "url": "해당 뉴스의 실제 웹페이지 링크 주소(http로 시작)",
+                        "publishedAt": "뉴스가 보도된 날짜 또는 시간 (예: 2026.05.23 또는 3시간 전)"
+                    }
+                ]
+            }`;
+
+            for (let attempt = 1; attempt <= maxRetries; attempt++) {
+                try {
+                    if (attempt > 1) {
+                        document.getElementById('status-container').textContent = `⏳ 서버 지연으로 다시 연결 중입니다... (${attempt}/${maxRetries})`;
+                    }
+
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{ parts: [{ text: prompt }] }],
+                            tools: [{ "googleSearch": {} }] 
+                        })
+                    });
+
+                    if (response.status === 403) throw new Error("API 키가 유효하지 않거나 구글에 의해 정지되었습니다.");
+                    if (response.status === 429) {
+                        if (attempt === maxRetries) throw new Error("사용량이 너무 많습니다. 1분 후 다시 시도해주세요.");
+                        await new Promise(r => setTimeout(r, 5000));
+                        continue;
+                    }
+                    if (response.status === 503) {
+                        if (attempt === maxRetries) throw new Error("구글 AI 서버가 바쁩니다. 잠시 후 다시 시도해주세요.");
+                        await new Promise(r => setTimeout(r, 3000)); 
+                        continue;
+                    }
+                    if (!response.ok) {
+                        throw new Error(`통신 실패 (코드 ${response.status})`);
+                    }
+
+                    const json = await response.json();
+                    if (!json.candidates || json.candidates.length === 0) throw new Error("AI가 데이터 수집을 완료하지 못했습니다.");
+
+                    let aiText = json.candidates[0].content.parts[0].text;
+                    aiText = aiText.replace(/```json/gi, '').replace(/```/g, '').trim();
+
+                    return JSON.parse(aiText);
+
+                } catch (error) {
+                    if (attempt === maxRetries || error.message.includes("유효하지 않거나")) throw error;
+                    await new Promise(r => setTimeout(r, 2000));
+                }
+            }
+        }
+
+        function renderResults(data) {
+            const companyNameText = document.getElementById('res-company-name-text');
+            companyNameText.textContent = data.companyName || '기업 개요';
+
+            document.getElementById('res-description').textContent = data.description || "정보가 부족합니다.";
+            document.getElementById('res-outlook').innerHTML = (data.outlook || "").replace(/\n/g, '<br>');
+
+            document.getElementById('res-52w-high').textContent = data.fiftyTwoWeekHigh || "정보 없음";
+            document.getElementById('res-52w-low').textContent = data.fiftyTwoWeekLow || "정보 없음";
+            
+            let assessmentText = data.priceLevelAssessment || "분석 정보를 가져올 수 없습니다.";
+            assessmentText = assessmentText.replace(/(고점)/g, '<strong class="text-red-500 font-bold">$1</strong>');
+            assessmentText = assessmentText.replace(/(저점)/g, '<strong class="text-blue-500 font-bold">$1</strong>');
+            document.getElementById('res-price-level').innerHTML = assessmentText;
+
+            const actionBadge = document.getElementById('res-action-badge');
+            const actionText = data.action || "분석 불가";
+            actionBadge.textContent = actionText;
+            
+            if (actionText.includes("매수")) {
+                actionBadge.className = "px-3 py-1 rounded-full text-sm font-bold bg-red-100 text-red-600 shadow-sm";
+            } else if (actionText.includes("매도")) {
+                actionBadge.className = "px-3 py-1 rounded-full text-sm font-bold bg-blue-100 text-blue-600 shadow-sm";
+            } else {
+                actionBadge.className = "px-3 py-1 rounded-full text-sm font-bold bg-gray-200 text-gray-700 shadow-sm";
+            }
+
+            document.getElementById('res-target-price').textContent = data.targetPrice || "적정 가격 정보를 산출할 수 없습니다.";
+
+            const newsList = document.getElementById('res-news-list');
+            newsList.innerHTML = '';
