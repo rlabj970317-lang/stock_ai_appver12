@@ -29,7 +29,6 @@
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .fade-in { animation: fadeIn 0.5s ease-in-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        
         .news-card { transition: all 0.2s ease-in-out; }
         .news-card:hover { transform: translateY(-2px); border-color: #bfdbfe; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1); }
     </style>
@@ -43,7 +42,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
                 </svg>
             </div>
-            <h1 class="text-3xl md:text-4xl font-bold tracking-tight text-gray-900 mb-2">AI 분석 주식 플래너 with 준이준이준준이</h1>
+            <h1 class="text-3xl md:text-4xl font-bold tracking-tight text-gray-900 mb-2">AI 주식 분석 with 준이준이준준이</h1>
             <p class="text-gray-500 text-sm">실시간 검색 및 AI 분석을 통한 스마트한 투자 전략</p>
         </header>
 
@@ -51,9 +50,9 @@
             <h2 class="text-lg font-bold text-gray-800 mb-2 flex items-center">
                 <span class="mr-2">🔑</span> API 키 설정 (최초 1회만 입력)
             </h2>
-            <p class="text-sm text-gray-600 mb-4">깃허브 공개(Public) 상태를 유지하기 위해 키를 코드에 적지 않고 기기에 안전하게 저장합니다.</p>
+            <p class="text-sm text-gray-600 mb-4">깃허브 공개 상태 유지를 위해 키를 코드에 적지 않고 내 기기에만 안전하게 저장합니다.</p>
             <div class="flex gap-2">
-                <input type="password" id="api-key-input" placeholder="새로 발급받은 API 키를 여기에 붙여넣으세요" 
+                <input type="password" id="api-key-input" placeholder="새로 발급받은 API 키를 여기에 입력하세요" 
                     class="block w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-100 outline-none shadow-sm">
                 <button type="button" onclick="saveApiKey()"
                     class="bg-gray-800 hover:bg-gray-900 text-white font-semibold py-2 px-6 rounded-xl text-sm transition-colors whitespace-nowrap">
@@ -62,7 +61,7 @@
             </div>
             <p id="api-key-status" class="text-sm font-bold text-emerald-600 mt-3 hidden flex items-center">
                 <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                사용자님의 기기(브라우저)에 키가 안전하게 저장되었습니다!
+                기기에 키가 저장되었습니다!
             </p>
         </div>
 
@@ -102,7 +101,7 @@
                     <div class="bg-gray-50 p-4 rounded-xl border border-gray-100 flex-grow flex flex-col gap-3 justify-center">
                         <div>
                             <p class="text-sm font-semibold text-gray-700 mb-1">📊 1년(52주) 주가 변동 범위:</p>
-                            <div class="flex justify-between items-center bg-white p-2.5 rounded-lg border border-gray-200 text-sm hover:shadow-sm transition-shadow">
+                            <div class="flex justify-between items-center bg-white p-2.5 rounded-lg border border-gray-200 text-sm">
                                 <span class="text-blue-600 font-bold">최저: <span id="res-52w-low">-</span></span>
                                 <span class="text-gray-400 font-medium">~</span>
                                 <span class="text-red-600 font-bold">최고: <span id="res-52w-high">-</span></span>
@@ -139,6 +138,7 @@
     </div>
 
     <script>
+        // API 키 불러오기 로직
         document.addEventListener('DOMContentLoaded', () => {
             const savedKey = localStorage.getItem('GEMINI_API_KEY');
             if (savedKey) {
@@ -155,14 +155,13 @@
             }
             localStorage.setItem('GEMINI_API_KEY', key);
             document.getElementById('api-key-status').classList.remove('hidden');
-            alert("완료! 이제 분석하기 버튼을 누르시면 됩니다.");
+            alert("API 키가 저장되었습니다.");
         }
 
         async function startAnalysis() {
             const apiKey = localStorage.getItem('GEMINI_API_KEY');
             if (!apiKey) {
-                alert("위쪽 노란색 박스에 구글 API 키를 먼저 입력하고 저장해주세요!");
-                document.getElementById('api-key-input').focus();
+                alert("위쪽 노란색 박스에 API 키를 입력하고 저장해주세요!");
                 return;
             }
 
@@ -175,7 +174,7 @@
 
             const ticker = input.value.trim().toUpperCase();
             if (!ticker) {
-                alert("분석할 주식의 티커나 이름을 입력해주세요.");
+                alert("티커를 입력해주세요.");
                 return;
             }
 
@@ -185,10 +184,8 @@
             btnSpinner.classList.remove('hidden');
             resultsContainer.classList.add('hidden');
             
-            document.getElementById('res-company-name-text').textContent = '기업 개요';
-
             statusContainer.className = "mb-6 p-4 rounded-xl fade-in text-sm font-medium text-center bg-blue-50 text-blue-600";
-            statusContainer.textContent = `🚀 [${ticker}] 실시간 데이터를 바탕으로 AI가 심층 분석 중입니다... (최대 10초 소요)`;
+            statusContainer.textContent = `🚀 [${ticker}] 분석을 시작합니다... (최대 10초 소요)`;
             statusContainer.classList.remove('hidden');
             
             try {
@@ -197,7 +194,7 @@
                 statusContainer.classList.add('hidden');
             } catch (error) {
                 statusContainer.className = "mb-6 p-4 rounded-xl fade-in text-sm font-medium text-center bg-red-50 text-red-600";
-                statusContainer.textContent = "오류 발생: " + error.message;
+                statusContainer.textContent = "오류: " + error.message;
             } finally {
                 input.disabled = false;
                 submitBtn.disabled = false;
@@ -209,35 +206,30 @@
         async function fetchWithRetry(ticker, apiKey, maxRetries) {
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
             
-            const prompt = `당신은 탁월한 금융 애널리스트입니다. 종목 '${ticker}'에 대해 구글 검색을 활용해 최신 실시간 데이터를 바탕으로 아래 내용을 분석해주세요.
-
-            반드시 아래의 '순수 JSON' 형식으로만 반환하고 다른 텍스트나 마크다운 기호(\`\`\`)는 절대 넣지 마세요.
+            const prompt = `당신은 금융 애널리스트입니다. 종목 '${ticker}'에 대해 구글 검색 기반 실시간 데이터로 아래 내용을 분석하세요.
+            반드시 아래의 '순수 JSON' 형식으로만 반환하고 다른 텍스트는 넣지 마세요.
 
             {
                 "companyName": "공식 회사명",
-                "description": "회사의 주요 사업과 시장 내 위치 설명",
-                "outlook": "최근 실적 및 거시경제 상황을 종합한 향후 주가 전망",
-                "fiftyTwoWeekHigh": "1년(52주) 최고가 (검색하여 정확한 가격 명시, 예: $150.00 또는 150,000원)",
-                "fiftyTwoWeekLow": "1년(52주) 최저가 (검색하여 정확한 가격 명시, 예: $90.00 또는 90,000원)",
-                "priceLevelAssessment": "현재 주가가 1년 변동폭과 비교할 때 '고점', '저점', '적정 수준' 중 어디에 해당하는지 명확히 밝히고 그 이유를 짧게 설명",
-                "action": "매수, 매도, 관망 중 하나를 선택",
-                "targetPrice": "매수 시 권장 진입가, 매도 시 목표가 등 구체적인 가격대와 그 이유 (숫자 포함하여 상세히)",
+                "description": "사업 개요 및 시장 위치 (3줄)",
+                "outlook": "실적 및 경제 상황 기반 주가 전망",
+                "fiftyTwoWeekHigh": "1년 최고가",
+                "fiftyTwoWeekLow": "1년 최저가",
+                "priceLevelAssessment": "현재가 고점/저점 여부와 이유",
+                "action": "매수, 매도, 관망 중 택1",
+                "targetPrice": "목표가/진입가와 근거",
                 "news": [
                     {
-                        "title": "실제 검색된 최신 뉴스 제목",
-                        "summary": "뉴스 핵심 내용 1줄 요약",
-                        "url": "해당 뉴스의 실제 웹페이지 링크 주소(http로 시작)",
-                        "publishedAt": "뉴스가 보도된 날짜 또는 시간 (예: 2026.05.23 또는 3시간 전)"
+                        "title": "뉴스 제목",
+                        "summary": "뉴스 요약",
+                        "url": "http로 시작하는 실제 뉴스 주소",
+                        "publishedAt": "날짜/시간"
                     }
                 ]
             }`;
 
             for (let attempt = 1; attempt <= maxRetries; attempt++) {
                 try {
-                    if (attempt > 1) {
-                        document.getElementById('status-container').textContent = `⏳ 서버 지연으로 다시 연결 중입니다... (${attempt}/${maxRetries})`;
-                    }
-
                     const response = await fetch(url, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -247,64 +239,67 @@
                         })
                     });
 
-                    if (response.status === 403) throw new Error("API 키가 유효하지 않거나 구글에 의해 정지되었습니다.");
-                    if (response.status === 429) {
-                        if (attempt === maxRetries) throw new Error("사용량이 너무 많습니다. 1분 후 다시 시도해주세요.");
-                        await new Promise(r => setTimeout(r, 5000));
-                        continue;
-                    }
-                    if (response.status === 503) {
-                        if (attempt === maxRetries) throw new Error("구글 AI 서버가 바쁩니다. 잠시 후 다시 시도해주세요.");
-                        await new Promise(r => setTimeout(r, 3000)); 
-                        continue;
-                    }
-                    if (!response.ok) {
-                        throw new Error(`통신 실패 (코드 ${response.status})`);
-                    }
+                    if (response.status === 403) throw new Error("API 키 오류");
+                    if (!response.ok) throw new Error("서버 오류");
 
                     const json = await response.json();
-                    if (!json.candidates || json.candidates.length === 0) throw new Error("AI가 데이터 수집을 완료하지 못했습니다.");
-
                     let aiText = json.candidates[0].content.parts[0].text;
                     aiText = aiText.replace(/```json/gi, '').replace(/```/g, '').trim();
 
                     return JSON.parse(aiText);
-
                 } catch (error) {
-                    if (attempt === maxRetries || error.message.includes("유효하지 않거나")) throw error;
+                    if (attempt === maxRetries) throw error;
                     await new Promise(r => setTimeout(r, 2000));
                 }
             }
         }
 
         function renderResults(data) {
-            const companyNameText = document.getElementById('res-company-name-text');
-            companyNameText.textContent = data.companyName || '기업 개요';
-
-            document.getElementById('res-description').textContent = data.description || "정보가 부족합니다.";
+            document.getElementById('res-company-name-text').textContent = data.companyName || '기업 개요';
+            document.getElementById('res-description').textContent = data.description || "정보 부족";
             document.getElementById('res-outlook').innerHTML = (data.outlook || "").replace(/\n/g, '<br>');
-
-            document.getElementById('res-52w-high').textContent = data.fiftyTwoWeekHigh || "정보 없음";
-            document.getElementById('res-52w-low').textContent = data.fiftyTwoWeekLow || "정보 없음";
+            document.getElementById('res-52w-high').textContent = data.fiftyTwoWeekHigh || "-";
+            document.getElementById('res-52w-low').textContent = data.fiftyTwoWeekLow || "-";
             
-            let assessmentText = data.priceLevelAssessment || "분석 정보를 가져올 수 없습니다.";
-            assessmentText = assessmentText.replace(/(고점)/g, '<strong class="text-red-500 font-bold">$1</strong>');
-            assessmentText = assessmentText.replace(/(저점)/g, '<strong class="text-blue-500 font-bold">$1</strong>');
+            let assessmentText = data.priceLevelAssessment || "정보 없음";
+            assessmentText = assessmentText.replace(/(고점)/g, '<strong class="text-red-500">$1</strong>');
+            assessmentText = assessmentText.replace(/(저점)/g, '<strong class="text-blue-500">$1</strong>');
             document.getElementById('res-price-level').innerHTML = assessmentText;
 
-            const actionBadge = document.getElementById('res-action-badge');
-            const actionText = data.action || "분석 불가";
-            actionBadge.textContent = actionText;
-            
-            if (actionText.includes("매수")) {
-                actionBadge.className = "px-3 py-1 rounded-full text-sm font-bold bg-red-100 text-red-600 shadow-sm";
-            } else if (actionText.includes("매도")) {
-                actionBadge.className = "px-3 py-1 rounded-full text-sm font-bold bg-blue-100 text-blue-600 shadow-sm";
-            } else {
-                actionBadge.className = "px-3 py-1 rounded-full text-sm font-bold bg-gray-200 text-gray-700 shadow-sm";
-            }
+            const badge = document.getElementById('res-action-badge');
+            const action = data.action || "관망";
+            badge.textContent = action;
+            if (action.includes("매수")) badge.className = "px-3 py-1 rounded-full text-sm font-bold bg-red-100 text-red-600";
+            else if (action.includes("매도")) badge.className = "px-3 py-1 rounded-full text-sm font-bold bg-blue-100 text-blue-600";
+            else badge.className = "px-3 py-1 rounded-full text-sm font-bold bg-gray-200 text-gray-700";
 
-            document.getElementById('res-target-price').textContent = data.targetPrice || "적정 가격 정보를 산출할 수 없습니다.";
+            document.getElementById('res-target-price').textContent = data.targetPrice || "-";
 
             const newsList = document.getElementById('res-news-list');
             newsList.innerHTML = '';
+
+            if (data.news && data.news.length > 0) {
+                data.news.forEach(item => {
+                    const a = document.createElement('a');
+                    a.href = item.url && item.url.startsWith('http') ? item.url : '#';
+                    if (a.href !== '#') a.target = "_blank";
+                    
+                    a.className = "flex flex-col h-full bg-white border border-gray-100 rounded-xl p-4 news-card cursor-pointer";
+                    a.innerHTML = `
+                        <h3 class="text-base font-bold text-gray-800 mb-2 line-clamp-2">${item.title}</h3>
+                        <p class="text-sm text-gray-600 mb-3 line-clamp-2 flex-grow">${item.summary}</p>
+                        <div class="text-xs text-gray-400 font-medium border-t border-gray-50 pt-2">
+                            📅 ${item.publishedAt || "날짜 미상"}
+                        </div>
+                    `;
+                    newsList.appendChild(a);
+                });
+            } else {
+                newsList.innerHTML = `<p class="text-gray-500 text-center py-4 col-span-2">뉴스가 없습니다.</p>`;
+            }
+
+            document.getElementById('results-container').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
