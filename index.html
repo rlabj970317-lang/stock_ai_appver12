@@ -97,9 +97,26 @@
                         </div>
                         <span id="res-action-badge" class="px-3 py-1 rounded-full text-sm font-bold bg-gray-100 text-gray-600">분석중</span>
                     </h2>
-                    <div class="bg-gray-50 p-4 rounded-xl border border-gray-100 flex-grow flex flex-col justify-center">
-                        <p class="text-sm font-semibold text-gray-700 mb-1">💰 목표/권장 가격:</p>
-                        <p id="res-target-price" class="text-gray-800 text-base leading-relaxed font-medium"></p>
+                    
+                    <div class="bg-gray-50 p-4 rounded-xl border border-gray-100 flex-grow flex flex-col gap-3 justify-center">
+                        <div>
+                            <p class="text-sm font-semibold text-gray-700 mb-1">📊 1년(52주) 주가 변동 범위:</p>
+                            <div class="flex justify-between items-center bg-white p-2.5 rounded-lg border border-gray-200 text-sm">
+                                <span class="text-blue-600 font-bold">최저: <span id="res-52w-low">-</span></span>
+                                <span class="text-gray-400">~</span>
+                                <span class="text-red-600 font-bold">최고: <span id="res-52w-high">-</span></span>
+                            </div>
+                        </div>
+
+                        <div>
+                            <p class="text-sm font-semibold text-gray-700 mb-1">📍 현재 주가 위치 평가:</p>
+                            <p id="res-price-level" class="text-gray-700 text-sm leading-relaxed bg-white p-2.5 rounded-lg border border-gray-200"></p>
+                        </div>
+
+                        <div class="pt-3 border-t border-gray-200 mt-1">
+                            <p class="text-sm font-semibold text-gray-700 mb-1">💰 목표/권장 진입 가격:</p>
+                            <p id="res-target-price" class="text-gray-800 text-sm leading-relaxed font-medium"></p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -121,7 +138,7 @@
     </div>
 
     <script>
-        // 🚀 브라우저에 저장된 API 키 불러오기
+        // API 키 불러오기 로직
         document.addEventListener('DOMContentLoaded', () => {
             const savedKey = localStorage.getItem('GEMINI_API_KEY');
             if (savedKey) {
@@ -130,7 +147,6 @@
             }
         });
 
-        // 🚀 API 키 저장 함수
         function saveApiKey() {
             const key = document.getElementById('api-key-input').value.trim();
             if (!key) {
@@ -143,7 +159,6 @@
         }
 
         async function startAnalysis() {
-            // 저장된 키가 있는지 먼저 확인
             const apiKey = localStorage.getItem('GEMINI_API_KEY');
             if (!apiKey) {
                 alert("위쪽 노란색 박스에 구글 API 키를 먼저 입력하고 저장해주세요!");
@@ -172,7 +187,7 @@
             resultsContainer.classList.add('hidden');
             
             statusContainer.className = "mb-6 p-4 rounded-xl fade-in text-sm font-medium text-center bg-blue-50 text-blue-600";
-            statusContainer.textContent = `🚀 [${ticker}] 데이터를 수집하고 분석 중입니다... (최대 10초 소요)`;
+            statusContainer.textContent = `🚀 [${ticker}] 실시간 데이터를 바탕으로 AI가 심층 분석 중입니다... (최대 10초 소요)`;
             statusContainer.classList.remove('hidden');
             
             try {
@@ -191,9 +206,10 @@
         }
 
         async function fetchWithRetry(ticker, apiKey, maxRetries) {
-            // 💡 사용자님 계정에서 지원하는 2.5 버전 사용
+            // 사용자 계정에 맞는 gemini-2.5-flash 모델 적용
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
             
+            // 🚀 AI 프롬프트 업데이트 (52주 고점/저점, 위치 평가 추가)
             const prompt = `당신은 탁월한 금융 애널리스트입니다. 종목 '${ticker}'에 대해 구글 검색을 활용해 최신 실시간 데이터를 바탕으로 아래 내용을 분석해주세요.
 
             반드시 아래의 '순수 JSON' 형식으로만 반환하고 다른 텍스트나 마크다운 기호(\`\`\`)는 절대 넣지 마세요.
@@ -201,6 +217,9 @@
             {
                 "description": "회사의 주요 사업과 시장 내 위치 설명",
                 "outlook": "최근 실적 및 거시경제 상황을 종합한 향후 주가 전망",
+                "fiftyTwoWeekHigh": "1년(52주) 최고가 (검색하여 정확한 가격 명시, 예: $150.00 또는 150,000원)",
+                "fiftyTwoWeekLow": "1년(52주) 최저가 (검색하여 정확한 가격 명시, 예: $90.00 또는 90,000원)",
+                "priceLevelAssessment": "현재 주가가 1년 변동폭과 비교할 때 '고점', '저점', '적정 수준' 중 어디에 해당하는지 명확히 밝히고 그 이유를 짧게 설명",
                 "action": "매수, 매도, 관망 중 하나를 선택",
                 "targetPrice": "매수 시 권장 진입가, 매도 시 목표가 등 구체적인 가격대와 그 이유 (숫자 포함하여 상세히)",
                 "news": [
@@ -228,9 +247,8 @@
                         })
                     });
 
-                    // 403 오류일 경우 (잘못된 키 입력)
                     if (response.status === 403) {
-                        throw new Error("입력하신 API 키가 틀렸거나 정지되었습니다. Google AI Studio에서 새 키를 발급받아 다시 설정해주세요.");
+                        throw new Error("API 키가 유효하지 않거나 구글에 의해 정지되었습니다. Google AI Studio에서 새 키를 발급받아 주세요.");
                     }
                     if (response.status === 429) {
                         if (attempt === maxRetries) throw new Error("사용량이 너무 많습니다. 1분 후 다시 시도해주세요.");
@@ -260,7 +278,7 @@
                     return JSON.parse(aiText);
 
                 } catch (error) {
-                    if (attempt === maxRetries || error.message.includes("틀렸거나 정지")) throw error;
+                    if (attempt === maxRetries || error.message.includes("유효하지 않거나")) throw error;
                     await new Promise(r => setTimeout(r, 2000));
                 }
             }
@@ -269,6 +287,16 @@
         function renderResults(data) {
             document.getElementById('res-description').textContent = data.description || "정보가 부족합니다.";
             document.getElementById('res-outlook').innerHTML = (data.outlook || "").replace(/\n/g, '<br>');
+
+            // 🚀 신규: 1년 고점/저점 및 위치 평가 렌더링
+            document.getElementById('res-52w-high').textContent = data.fiftyTwoWeekHigh || "정보 없음";
+            document.getElementById('res-52w-low').textContent = data.fiftyTwoWeekLow || "정보 없음";
+            
+            // 고점/저점 키워드에 따라 색상 하이라이트 추가
+            let assessmentText = data.priceLevelAssessment || "분석 정보를 가져올 수 없습니다.";
+            assessmentText = assessmentText.replace(/(고점)/g, '<strong class="text-red-500">$1</strong>');
+            assessmentText = assessmentText.replace(/(저점)/g, '<strong class="text-blue-500">$1</strong>');
+            document.getElementById('res-price-level').innerHTML = assessmentText;
 
             // 투자 전략 (매수/매도/관망) 배지
             const actionBadge = document.getElementById('res-action-badge');
@@ -285,7 +313,7 @@
 
             document.getElementById('res-target-price').textContent = data.targetPrice || "적정 가격 정보를 산출할 수 없습니다.";
 
-            // 뉴스 리스트 렌더링 (클릭 링크 + 날짜)
+            // 🚀 뉴스 리스트 렌더링 (클릭 링크 + 날짜 유지)
             const newsList = document.getElementById('res-news-list');
             newsList.innerHTML = '';
 
